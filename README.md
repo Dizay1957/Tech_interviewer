@@ -2,6 +2,8 @@
 
 A modern, interactive web application for practicing technical interview questions across multiple domains. Built with Next.js, TypeScript, and Tailwind CSS.
 
+🌐 **Live Demo**: [https://tech-interviewer-weld.vercel.app/](https://tech-interviewer-weld.vercel.app/)
+
 ## Features
 
 - 📚 **Multiple Tech Domains**: Practice questions from various categories including:
@@ -35,6 +37,12 @@ A modern, interactive web application for practicing technical interview questio
 - **Styling**: Tailwind CSS
 - **Animations**: Framer Motion
 - **CSV Parsing**: PapaParse
+
+## Live Demo
+
+🚀 **Try it now**: [https://tech-interviewer-weld.vercel.app/](https://tech-interviewer-weld.vercel.app/)
+
+The app is deployed and ready to use! No installation required.
 
 ## Getting Started
 
