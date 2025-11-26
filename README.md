@@ -30,6 +30,12 @@ A modern, interactive web application for practicing technical interview questio
   - Supports custom categories and difficulty levels
   - Automatic category grouping for better organization
 
+- 🤖 **AI Chatbot Assistant**: 
+  - Powered by Groq AI (Llama 3.1 8B) for instant help with technical questions
+  - Get explanations, coding tips, and interview guidance
+  - Navigate to practice categories by asking the chatbot
+  - Available on every page via floating chat button
+
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
@@ -37,6 +43,7 @@ A modern, interactive web application for practicing technical interview questio
 - **Styling**: Tailwind CSS
 - **Animations**: Framer Motion
 - **CSV Parsing**: PapaParse
+- **AI**: Groq SDK (Llama 3.1 8B Instant)
 
 ## Live Demo
 
@@ -64,12 +71,24 @@ cd Tech_interviewer
 npm install
 ```
 
-3. Run the development server:
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add your Groq API key:
+```
+GROQ_API_KEY=your_groq_api_key_here
+```
+
+Get your API key from [Groq Console](https://console.groq.com/)
+
+4. Run the development server:
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ### Building for Production
 
@@ -88,7 +107,11 @@ Tech_interviewer/
 │   │   └── [domain]/      # Dynamic route for each category
 │   └── layout.tsx         # Root layout
 ├── components/            # React components
-│   └── QuestionCard.tsx   # Question card with swipe functionality
+│   ├── QuestionCard.tsx   # Question card with swipe functionality
+│   └── Chatbot.tsx        # AI chatbot assistant component
+├── app/
+│   └── api/
+│       └── chat/          # Chatbot API route
 ├── lib/                   # Utility functions
 │   └── csvParser.ts       # CSV parsing and category mapping
 ├── public/
@@ -150,6 +173,13 @@ Related categories are automatically grouped:
 - **Button Navigation**: Use Previous/Next buttons for precise navigation
 - **Answer Toggle**: Click "Show Answer" to reveal the solution, "Hide Answer" to conceal it
 - **Question Counter**: See your progress with the current question number
+
+### Chatbot Features
+
+- **Ask Questions**: Get help with any technical interview topic
+- **Category Navigation**: Ask the chatbot to navigate to specific categories (e.g., "Show me web development questions")
+- **Explanations**: Get detailed explanations and coding tips
+- **Available Everywhere**: Access the chatbot from any page via the floating button
 
 ## Contributing
 

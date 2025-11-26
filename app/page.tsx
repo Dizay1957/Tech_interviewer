@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { loadQuestionsFromCSV, slugToCategory, categoryGroups } from '@/lib/csvParser'
+import { loadQuestionsFromCSV, slugToCategory } from '@/lib/csvParser'
 
 const categoryIcons: { [key: string]: string } = {
   'Web Development': '🌐',
@@ -18,11 +18,18 @@ export default function Home() {
   const router = useRouter()
   const [categories, setCategories] = useState<Array<{ id: string; name: string; icon: string; count: number }>>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadCategories() {
       try {
         const questions = await loadQuestionsFromCSV('/data/questions.csv')
+        
+        if (questions.length === 0) {
+          setLoading(false)
+          return
+        }
+        
         const categoryMap = new Map<string, number>()
         
         questions.forEach(q => {
@@ -32,7 +39,6 @@ export default function Home() {
         
         const categoryList = Array.from(categoryMap.entries())
           .map(([name, count]) => {
-            // Find the slug for this category
             const slug = Object.entries(slugToCategory).find(([_, catName]) => catName === name)?.[0] || 
                         name.toLowerCase().replace(/\s+/g, '-')
             return {
@@ -45,14 +51,24 @@ export default function Home() {
           .sort((a, b) => a.name.localeCompare(b.name))
         
         setCategories(categoryList)
-      } catch (error) {
-        console.error('Error loading categories:', error)
+        setError(null)
+      } catch (error: any) {
+        setError(error.message || 'Failed to load categories')
       } finally {
         setLoading(false)
       }
     }
     
-    loadCategories()
+    const timeoutId = setTimeout(() => {
+      setError('Loading timeout. Please refresh the page.')
+      setLoading(false)
+    }, 10000)
+    
+    loadCategories().finally(() => {
+      clearTimeout(timeoutId)
+    })
+    
+    return () => clearTimeout(timeoutId)
   }, [])
 
   const handleDomainSelect = (domainId: string) => {
@@ -70,12 +86,44 @@ export default function Home() {
     )
   }
 
+  if (error) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <div className="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-md">
+          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+          >
+            Reload Page
+          </button>
+        </div>
+      </main>
+    )
+  }
+
+  if (categories.length === 0) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <div className="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-md">
+          <p className="text-gray-600 dark:text-gray-300 mb-4">No categories found. Please check the CSV file.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+          >
+            Reload Page
+          </button>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-6xl mx-auto pt-12 pb-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Tech Interviewer
+            Interviewer
           </h1>
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300">
             Practice your technical interviews

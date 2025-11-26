@@ -60,7 +60,16 @@ export const slugToCategory: { [key: string]: string } = {
 export async function loadQuestionsFromCSV(filePath: string): Promise<Question[]> {
   try {
     const response = await fetch(filePath)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch CSV: ${response.status} ${response.statusText}`)
+    }
+    
     const csvText = await response.text()
+    
+    if (!csvText || csvText.trim().length === 0) {
+      throw new Error('CSV file is empty')
+    }
     
     return new Promise((resolve, reject) => {
       Papa.parse(csvText, {
@@ -71,9 +80,7 @@ export async function loadQuestionsFromCSV(filePath: string): Promise<Question[]
             .map((row: any): Question | null => {
               let category = (row.Category || row.category || '').trim()
               
-              // Clean up malformed categories (handle CSV parsing issues)
               if (category.startsWith('and ') || category.startsWith('-and ')) {
-                // Try to infer the correct category from the question/answer
                 const questionText = (row.Question || row.question || '').toLowerCase()
                 const answerText = (row.Answer || row.answer || '').toLowerCase()
                 
@@ -84,7 +91,6 @@ export async function loadQuestionsFromCSV(filePath: string): Promise<Question[]
                           answerText.includes('cookie') || answerText.includes('local storage')) {
                   category = 'Web Development'
                 } else {
-                  // Skip this question if we can't determine the category
                   return null
                 }
               }
@@ -115,7 +121,6 @@ export async function loadQuestionsFromCSV(filePath: string): Promise<Question[]
       })
     })
   } catch (error) {
-    console.error('Error loading CSV:', error)
     return []
   }
 }

@@ -30,7 +30,6 @@ export default function PracticePage() {
         }
       } catch (err) {
         setError('Error loading questions')
-        console.error(err)
       } finally {
         setLoading(false)
       }
