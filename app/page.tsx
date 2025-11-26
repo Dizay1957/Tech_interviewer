@@ -25,6 +25,9 @@ export default function Home() {
     const CACHE_KEY = 'interviewer_categories_cache'
     const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
     
+    // Check if localStorage is available (SSR safety)
+    if (typeof window === 'undefined') return
+    
     async function loadCategories() {
       try {
         // Check cache first

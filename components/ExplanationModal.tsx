@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface ExplanationModalProps {
@@ -12,26 +12,43 @@ interface ExplanationModalProps {
 
 export default function ExplanationModal({ isOpen, onClose, question, answer }: ExplanationModalProps) {
   const [explanation, setExplanation] = useState<string>('')
+  const [frenchExplanation, setFrenchExplanation] = useState<string>('')
+  const [language, setLanguage] = useState<'en' | 'fr'>('en')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen && question && answer) {
-      fetchExplanation()
+      fetchExplanation('en')
     } else {
       // Reset when modal closes
       setExplanation('')
+      setFrenchExplanation('')
+      setLanguage('en')
       setError(null)
       setIsLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
-  const fetchExplanation = async () => {
+  const fetchExplanation = useCallback(async (lang: 'en' | 'fr') => {
+    // If we already have the explanation for this language, don't fetch again
+    if (lang === 'en' && explanation) return
+    if (lang === 'fr' && frenchExplanation) return
+
     setIsLoading(true)
     setError(null)
     
     try {
+      const langPrompts = {
+        fr: 'Veuillez fournir une explication détaillée et facile à comprendre pour cette question et réponse d\'entretien technique:\n\nQuestion: {question}\n\nRéponse: {answer}\n\nVeuillez expliquer les concepts clairement, fournir du contexte et m\'aider à mieux comprendre. Répondez en français.',
+        en: 'Please provide a detailed, easy-to-understand explanation for this technical interview question and answer:\n\nQuestion: {question}\n\nAnswer: {answer}\n\nPlease explain the concepts clearly, provide context, and help me understand this better.'
+      }
+
+      const content = langPrompts[lang]
+        .replace('{question}', question)
+        .replace('{answer}', answer)
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -41,7 +58,7 @@ export default function ExplanationModal({ isOpen, onClose, question, answer }: 
           messages: [
             {
               role: 'user',
-              content: `Please provide a detailed, easy-to-understand explanation for this technical interview question and answer:\n\nQuestion: ${question}\n\nAnswer: ${answer}\n\nPlease explain the concepts clearly, provide context, and help me understand this better.`,
+              content,
             },
           ],
           categories: [],
@@ -53,13 +70,33 @@ export default function ExplanationModal({ isOpen, onClose, question, answer }: 
       }
 
       const data = await response.json()
-      setExplanation(data.message)
+      if (lang === 'en') {
+        setExplanation(data.message)
+      } else {
+        setFrenchExplanation(data.message)
+      }
     } catch (error) {
-      setError('Failed to load explanation. Please try again.')
+      setError(lang === 'fr' ? 'Échec du chargement de l\'explication. Veuillez réessayer.' : 'Failed to load explanation. Please try again.')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [question, answer, explanation, frenchExplanation])
+
+  const handleLanguageChange = useCallback((newLang: 'en' | 'fr') => {
+    setLanguage(newLang)
+    // Fetch French explanation if switching to French and not already loaded
+    if (newLang === 'fr' && !frenchExplanation && !isLoading) {
+      fetchExplanation('fr')
+    }
+  }, [frenchExplanation, isLoading, fetchExplanation])
+
+  const currentExplanation = useMemo(() => {
+    return language === 'en' ? explanation : frenchExplanation
+  }, [language, explanation, frenchExplanation])
+
+  const showLoading = useMemo(() => {
+    return isLoading && !currentExplanation
+  }, [isLoading, currentExplanation])
 
   if (!isOpen) return null
 
@@ -109,40 +146,65 @@ export default function ExplanationModal({ isOpen, onClose, question, answer }: 
                     <p className="text-sm text-white/80">Understanding made simple</p>
                   </div>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
-                  aria-label="Close"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="flex items-center gap-3">
+                  {/* Language Toggle */}
+                  <div className="flex items-center gap-2 bg-white/20 rounded-lg p-1">
+                    <button
+                      onClick={() => handleLanguageChange('en')}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        language === 'en'
+                          ? 'bg-white text-indigo-600'
+                          : 'text-white/80 hover:text-white'
+                      }`}
+                    >
+                      EN
+                    </button>
+                    <button
+                      onClick={() => handleLanguageChange('fr')}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        language === 'fr'
+                          ? 'bg-white text-indigo-600'
+                          : 'text-white/80 hover:text-white'
+                      }`}
+                    >
+                      FR
+                    </button>
+                  </div>
+                  <button
+                    onClick={onClose}
+                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
+                    aria-label="Close"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Content */}
               <div className="flex-1 overflow-y-auto p-6">
-                {isLoading ? (
+                {showLoading ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <div className="relative w-16 h-16 mb-4">
                       <div className="absolute inset-0 border-4 border-indigo-200 dark:border-indigo-900 rounded-full"></div>
                       <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
                     </div>
                     <p className="text-gray-600 dark:text-gray-300 font-medium">
-                      AI is crafting your explanation...
+                      {language === 'fr' ? 'L\'IA prépare votre explication...' : 'AI is crafting your explanation...'}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                      This may take a few seconds
+                      {language === 'fr' ? 'Cela peut prendre quelques secondes' : 'This may take a few seconds'}
                     </p>
                   </div>
                 ) : error ? (
@@ -164,10 +226,10 @@ export default function ExplanationModal({ isOpen, onClose, question, answer }: 
                     </div>
                     <p className="text-red-600 dark:text-red-400 font-medium mb-2">{error}</p>
                     <button
-                      onClick={fetchExplanation}
+                      onClick={() => fetchExplanation(language)}
                       className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
                     >
-                      Try Again
+                      {language === 'fr' ? 'Réessayer' : 'Try Again'}
                     </button>
                   </div>
                 ) : explanation ? (
@@ -179,16 +241,16 @@ export default function ExplanationModal({ isOpen, onClose, question, answer }: 
                   >
                     <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-6 mb-6 border border-indigo-200 dark:border-indigo-800">
                       <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-100 mb-2">
-                        Question
+                        {language === 'fr' ? 'Question' : 'Question'}
                       </h3>
                       <p className="text-gray-700 dark:text-gray-300">{question}</p>
                     </div>
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        Detailed Explanation
+                        {language === 'fr' ? 'Explication Détaillée' : 'Detailed Explanation'}
                       </h3>
                       <div className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                        {explanation}
+                        {currentExplanation || (language === 'fr' ? 'Chargement de la traduction...' : 'Loading translation...')}
                       </div>
                     </div>
                   </motion.div>
@@ -206,7 +268,7 @@ export default function ExplanationModal({ isOpen, onClose, question, answer }: 
                     onClick={onClose}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
                   >
-                    Close
+                    {language === 'fr' ? 'Fermer' : 'Close'}
                   </button>
                 </div>
               </div>

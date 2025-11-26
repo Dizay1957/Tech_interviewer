@@ -190,9 +190,11 @@ Related categories are automatically grouped:
 
 - **Explain More Button**: Appears when you show an answer
 - **Detailed Explanations**: Get comprehensive AI-powered explanations for any question
+- **Bilingual Support**: Switch between English and French explanations
 - **Beautiful Modal**: Elegant, responsive modal with smooth animations
 - **Context-Aware**: AI understands the question and answer context
 - **Fast Responses**: Powered by Groq's fast inference engine
+- **Smart Caching**: Explanations cached for instant language switching
 
 ### Performance Optimizations
 

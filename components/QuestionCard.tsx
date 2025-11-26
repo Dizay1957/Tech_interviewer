@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion'
 import ExplanationModal from './ExplanationModal'
 
@@ -26,7 +26,7 @@ export default function QuestionCard({ question, answer, onSwipe, isActive }: Qu
     }
   }, [isActive, x])
 
-  const handleDragEnd = (_event: any, info: PanInfo) => {
+  const handleDragEnd = useCallback((_event: any, info: PanInfo) => {
     const threshold = 100
     if (info.offset.x > threshold) {
       onSwipe('right')
@@ -35,7 +35,7 @@ export default function QuestionCard({ question, answer, onSwipe, isActive }: Qu
     } else {
       x.set(0)
     }
-  }
+  }, [onSwipe, x])
 
   if (!isActive) return null
 
