@@ -19,6 +19,7 @@ A modern, interactive web application for practicing technical interview questio
   - Swipe left or right to navigate between questions (mobile-friendly)
   - Click buttons to navigate (desktop-friendly)
   - Show/hide answers with a single click
+  - **AI-Powered "Explain More"**: Get detailed AI explanations for any answer
 
 - 📱 **Responsive Design**: 
   - Fully optimized for both mobile and desktop devices
@@ -29,6 +30,7 @@ A modern, interactive web application for practicing technical interview questio
   - Easy to add new questions by updating the CSV file
   - Supports custom categories and difficulty levels
   - Automatic category grouping for better organization
+  - Client-side caching for fast loading (5-minute cache)
 
 - 🤖 **AI Chatbot Assistant**: 
   - Powered by Groq AI (Llama 3.1 8B) for instant help with technical questions
@@ -108,10 +110,13 @@ Tech_interviewer/
 │   └── layout.tsx         # Root layout
 ├── components/            # React components
 │   ├── QuestionCard.tsx   # Question card with swipe functionality
-│   └── Chatbot.tsx        # AI chatbot assistant component
+│   ├── Chatbot.tsx       # AI chatbot assistant component
+│   └── ExplanationModal.tsx # AI explanation modal
 ├── app/
-│   └── api/
-│       └── chat/          # Chatbot API route
+│   ├── api/
+│   │   └── chat/         # Chatbot API route
+│   ├── page.tsx          # Home page with category selection
+│   └── practice/        # Practice pages
 ├── lib/                   # Utility functions
 │   └── csvParser.ts       # CSV parsing and category mapping
 ├── public/
@@ -180,6 +185,22 @@ Related categories are automatically grouped:
 - **Category Navigation**: Ask the chatbot to navigate to specific categories (e.g., "Show me web development questions")
 - **Explanations**: Get detailed explanations and coding tips
 - **Available Everywhere**: Access the chatbot from any page via the floating button
+
+### AI Explanation Feature
+
+- **Explain More Button**: Appears when you show an answer
+- **Detailed Explanations**: Get comprehensive AI-powered explanations for any question
+- **Beautiful Modal**: Elegant, responsive modal with smooth animations
+- **Context-Aware**: AI understands the question and answer context
+- **Fast Responses**: Powered by Groq's fast inference engine
+
+### Performance Optimizations
+
+- **Client-Side Caching**: Categories cached for 5 minutes for instant loading
+- **Optimized CSV Parsing**: Efficient parsing with error handling
+- **Lazy Loading**: Components load only when needed
+- **Memory Management**: Proper cleanup to prevent memory leaks
+- **Responsive Design**: Optimized for all screen sizes
 
 ## Contributing
 

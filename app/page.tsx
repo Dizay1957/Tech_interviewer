@@ -21,9 +21,28 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let isMounted = true
+    const CACHE_KEY = 'interviewer_categories_cache'
+    const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+    
     async function loadCategories() {
       try {
+        // Check cache first
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached)
+          if (Date.now() - timestamp < CACHE_DURATION) {
+            if (isMounted) {
+              setCategories(data)
+              setLoading(false)
+              return
+            }
+          }
+        }
+        
         const questions = await loadQuestionsFromCSV('/data/questions.csv')
+        
+        if (!isMounted) return
         
         if (questions.length === 0) {
           setLoading(false)
@@ -50,25 +69,42 @@ export default function Home() {
           })
           .sort((a, b) => a.name.localeCompare(b.name))
         
-        setCategories(categoryList)
-        setError(null)
+        // Cache the results
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: categoryList,
+          timestamp: Date.now()
+        }))
+        
+        if (isMounted) {
+          setCategories(categoryList)
+          setError(null)
+        }
       } catch (error: any) {
-        setError(error.message || 'Failed to load categories')
+        if (isMounted) {
+          setError(error.message || 'Failed to load categories')
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
     
     const timeoutId = setTimeout(() => {
-      setError('Loading timeout. Please refresh the page.')
-      setLoading(false)
-    }, 10000)
+      if (isMounted) {
+        setError('Loading timeout. Please refresh the page.')
+        setLoading(false)
+      }
+    }, 15000) // Increased to 15 seconds
     
     loadCategories().finally(() => {
       clearTimeout(timeoutId)
     })
     
-    return () => clearTimeout(timeoutId)
+    return () => {
+      isMounted = false
+      clearTimeout(timeoutId)
+    }
   }, [])
 
   const handleDomainSelect = (domainId: string) => {
@@ -79,8 +115,12 @@ export default function Home() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading categories...</p>
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 border-4 border-indigo-200 dark:border-indigo-900 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-gray-600 dark:text-gray-300 font-medium mb-2">Loading categories...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">This may take a few seconds</p>
         </div>
       </main>
     )

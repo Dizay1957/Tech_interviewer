@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion'
+import ExplanationModal from './ExplanationModal'
 
 interface QuestionCardProps {
   question: string
@@ -12,6 +13,7 @@ interface QuestionCardProps {
 
 export default function QuestionCard({ question, answer, onSwipe, isActive }: QuestionCardProps) {
   const [showAnswer, setShowAnswer] = useState(false)
+  const [showExplanation, setShowExplanation] = useState(false)
   const x = useMotionValue(0)
   const rotate = useTransform(x, [-300, 300], [-15, 15])
   const opacity = useTransform(x, [-300, -150, 0, 150, 300], [0, 1, 1, 1, 0])
@@ -19,6 +21,7 @@ export default function QuestionCard({ question, answer, onSwipe, isActive }: Qu
   useEffect(() => {
     if (isActive) {
       setShowAnswer(false)
+      setShowExplanation(false)
       x.set(0)
     }
   }, [isActive, x])
@@ -82,16 +85,48 @@ export default function QuestionCard({ question, answer, onSwipe, isActive }: Qu
         <div className="flex gap-3 mt-auto">
           <button
             onClick={() => setShowAnswer(!showAnswer)}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 active:scale-95"
+            className={`${showAnswer ? 'flex-1' : 'w-full'} bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 active:scale-95`}
           >
             {showAnswer ? 'Hide Answer' : 'Show Answer'}
           </button>
+          {showAnswer && (
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              onClick={() => setShowExplanation(true)}
+              className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 shadow-lg"
+            >
+              <svg
+                className="w-5 h-5 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                />
+              </svg>
+              <span className="whitespace-nowrap">Explain More</span>
+            </motion.button>
+          )}
         </div>
 
         <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>Swipe left or right to go to the next question</p>
         </div>
       </div>
+
+      <ExplanationModal
+        isOpen={showExplanation}
+        onClose={() => setShowExplanation(false)}
+        question={question}
+        answer={answer}
+      />
     </motion.div>
   )
 }

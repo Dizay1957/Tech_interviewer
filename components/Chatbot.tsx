@@ -32,11 +32,30 @@ export default function Chatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Load categories on mount
+  // Load categories on mount (with caching)
   useEffect(() => {
+    let isMounted = true
+    const CACHE_KEY = 'interviewer_categories_cache'
+    const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+    
     async function loadCategories() {
       try {
+        // Check cache first
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached)
+          if (Date.now() - timestamp < CACHE_DURATION && data) {
+            if (isMounted) {
+              setCategories(data)
+              return
+            }
+          }
+        }
+        
         const questions = await loadQuestionsFromCSV('/data/questions.csv')
+        
+        if (!isMounted) return
+        
         const categoryMap = new Map<string, number>()
         
         questions.forEach(q => {
@@ -57,13 +76,19 @@ export default function Chatbot() {
           })
           .sort((a, b) => a.name.localeCompare(b.name))
         
-        setCategories(categoryList)
+        if (isMounted) {
+          setCategories(categoryList)
+        }
       } catch (error) {
         // Silently fail - categories will be empty
       }
     }
     
     loadCategories()
+    
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const scrollToBottom = () => {
@@ -71,7 +96,9 @@ export default function Chatbot() {
   }
 
   useEffect(() => {
-    scrollToBottom()
+    if (messages.length > 0) {
+      scrollToBottom()
+    }
   }, [messages])
 
   useEffect(() => {
